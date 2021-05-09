@@ -1,6 +1,8 @@
-import Logs from "../../database/migrations/logs";
-import Sessions from "../../database/migrations/sessions";
-import Users from "../../database/migrations/users";
+import Logs from '../../database/migrations/logs';
+import Sessions from '../../database/migrations/sessions';
+import Users from '../../database/migrations/users';
+import * as seeds from './dataseeder.config.json';
+import Database from '../../database/database';
 
 /* eslint-disable */
 interface ITables {
@@ -22,19 +24,40 @@ export default class Migrate {
     }
 
     init(): void {
-        RegisterCommand('migrate', (source: number, args: string[]): void => {
+        RegisterCommand('migrate', async (source: number, args: string[]): Promise<void> => {
             const table: string = args[0];
 
             if (table === 'fresh') {
-                this.freshMigrate();
+                await this.freshMigrate();
+
+                return;
+            }
+
+            if (table === 'fresh:seed') {
+                await this.freshMigrate();
+                await this.seed();
             }
 
         }, true);
     }
 
+    async seed(): Promise<void> {
+        const tables: string[] = Object.keys(seeds);
+
+        for (const table of tables) {
+            if (table !== 'default') {
+                console.log(`[Seed] Seeding: ${table}`);
+                await Database.insert(table, seeds[table].rows);
+            }
+        }
+    }
+
     async freshMigrate(): Promise<void> {
         for (const table of Object.keys(this.tables)) {
+            console.log(`[Migrate] Dropping table: ${table}`);
             await this.tables[table].down();
+
+            console.log(`[Migrate] Creating table: ${table}`);
             await this.tables[table].up();
         }
     }

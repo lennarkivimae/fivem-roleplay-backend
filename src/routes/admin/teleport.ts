@@ -25,7 +25,7 @@ export default class Teleport {
     }
 
     init(): void {
-        onNet('serverTeleportHandler', (data: ISettings) => {
+        onNet('/server/admin/teleport', (data: ISettings) => {
             this.data = data;
             this.teleportProcess();
         });
@@ -54,7 +54,7 @@ export default class Teleport {
             targetCoords: this.data.targetCoords
         };
 
-        emitNet('clientTeleportHandler', this.data.playerId, payload);
+        emitNet('/client/admin/teleport', this.data.playerId, payload);
     }
 
     escapeData(): void {

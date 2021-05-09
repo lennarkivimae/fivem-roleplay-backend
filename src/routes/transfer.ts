@@ -1,5 +1,5 @@
-import Database from "../../../database/database";
-import Helpers from "../../../helpers/helpers";
+import Database from "../database/database";
+import Helpers from "../helpers/helpers";
 
 interface IData {
     token: string;
@@ -22,7 +22,7 @@ export default class Transfer {
     }
 
     init(): void {
-        onNet('serverTransferFunds', (args: string[]) => {
+        onNet('/server/transfer', (args: string[]) => {
             this.data = {
                 token: Database.escape(args[0]),
                 playerId: Number(Database.escape(args[1])),
@@ -56,7 +56,7 @@ export default class Transfer {
                 sql = `UPDATE users SET bank=${target.bank + this.data.amount} WHERE username=${this.data.targetName}`;
                 Database.execute(sql);
 
-                Helpers.sendClientMessage(this.data.playerId, ['success', `You have transfered ${this.data.amount} to ${this.data.targetName}s account`]);
+                Helpers.sendClientMessage(this.data.playerId, ['success', `You have transferred ${this.data.amount} to ${this.data.targetName}s account`]);
                 Helpers.sendClientMessage(this.data.targetId, ['info', `You have received transfer of ${this.data.amount} from ${this.data.targetName}`]);
 
                 Helpers.logEvent(`TRANSFER: TO - ${this.data.targetName} FROM ${this.data.playerName} - AMOUNT: ${this.data.amount}`);

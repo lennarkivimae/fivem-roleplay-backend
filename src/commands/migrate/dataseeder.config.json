@@ -1,0 +1,13 @@
+{
+  "users": {
+    "rows": [
+      {
+        "username": "lenny",
+        "password": "qwerty",
+        "cash": 1000,
+        "bank": 1000,
+        "role": "admin"
+      }
+    ]
+  }
+}

@@ -14,10 +14,10 @@
   "author": "Lenny",
   "license": "MIT",
   "dependencies": {
+    "cardinal": "^2.1.1",
     "dotenv": "^8.2.0",
     "md5": "^2.3.0",
-    "mysql2": "^2.2.5",
-    "cardinal": "^2.1.1"
+    "mysql2": "^2.2.5"
   },
   "devDependencies": {
     "@citizenfx/client": "*",

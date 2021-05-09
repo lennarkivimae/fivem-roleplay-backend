@@ -26,12 +26,12 @@ export default class Weapon {
         const role: string = await Helpers.getRole(this.data.token);
 
         if (role === 'admin') {
-            emitNet('clientGiveWeapon', this.data.targetId, this.data.weaponHash);
+            emitNet('/client/admin/give/weapon', this.data.targetId, this.data.weaponHash);
 
             return;
         }
 
-        Helpers.sendClientMessage(this.data.initiatorId, ['error', 'Insufficient priviledges']);
+        Helpers.sendClientMessage(this.data.initiatorId, ['error', 'Insufficient privileges']);
         Helpers.logEvent(`WARNING: ${this.data.initiatorName} tried to giveWeapon`);
     }
 }

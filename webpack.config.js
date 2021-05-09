@@ -5,6 +5,7 @@ const buildPath = path.resolve(__dirname, 'dist');
 
 const server = {
   entry: './src/index.ts',
+  mode: 'development',
   module: {
     rules: [
       {
@@ -28,6 +29,7 @@ const server = {
     path: buildPath
   },
   target: 'node',
+  cache: false
 };
 
 module.exports = server;

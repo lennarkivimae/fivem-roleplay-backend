@@ -14,7 +14,7 @@ interface IPayload {
     vehicleHash: number
 }
 
-export default class SpawnVehicle {
+export default class Vehicle {
     private data: IData;
 
     constructor() {
@@ -22,7 +22,7 @@ export default class SpawnVehicle {
     }
 
     init(): void {
-        onNet('serverSpawnVehicle', (data: IData) => {
+        onNet('/server/spawn/vehicle', (data: IData) => {
             this.data = data;
             this.spawnHandler();
         });
@@ -37,7 +37,7 @@ export default class SpawnVehicle {
                 vehicleHash: this.data.vehicleHash
             };
 
-            emitNet('clientSpawnVehicle', this.data.targetId, payload);
+            emitNet('/client/spawn/vehicle', this.data.targetId, payload);
             Helpers.logEvent(`NOTICE: Spawning vehicle for ${this.data.targetName}`, this.data.initiatorName, role);
 
             return;

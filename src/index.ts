@@ -1,7 +1,5 @@
 import Commands from "./commands/commands";
-import Database from "./database/database";
-import Events from "./events/events";
-import Auth from "./events/auth/auth";
+import Routes from './routes/routes';
 
 class Index {
     constructor() {
@@ -9,26 +7,16 @@ class Index {
     }
 
     init(): void {
-        this.registerEvents();
-        this.authorizationEvents();
+        this.registerRoutes();
         this.registerCommands();
-        this.initDb();
     }
 
     registerCommands(): void {
-        new Commands;
+        new Commands();
     }
 
-    authorizationEvents(): void {
-        new Auth;
-    }
-
-    registerEvents(): void {
-        new Events;
-    }
-
-    initDb(): void {
-        Database.connection = Database.createConnection();
+    registerRoutes(): void {
+        new Routes();
     }
 }
 

@@ -1,7 +1,6 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import Helpers from '../helpers/helpers';
-import * as config from '../../server.config.json';
 
 interface IDbSettings {
     host: string,
@@ -24,7 +23,7 @@ export default class Database {
     static hasLiveConnection: boolean = false;
 
     static async createConnection(): Promise<mysql.Connection> {
-        dotenv.config({ path: process.cwd() + `/${config.env}/.env` });
+        dotenv.config({ path: process.cwd() + `/.env` });
 
         const connectionSettings: IDbSettings = {
             host: process.env.DB_HOST,
@@ -59,6 +58,29 @@ export default class Database {
 
         Database.connection = Database.createConnection();
     }
+
+    /* eslint-disable */
+    static async insert(table: string, rows: any[]): Promise<void> {
+        for (const row of rows) {
+            const columns: string = Object.keys(row).join(', ');
+            let valuesArray: any[] = [];
+
+            for (const value of Object.values(row)) {
+                if (typeof value === 'string') {
+                    valuesArray.push('\'' + value + '\'');
+                } else {
+                    valuesArray.push(value);
+                }
+            }
+
+            const values = valuesArray.join(', ');
+            const sql: string = `INSERT INTO ${table} (${columns}) VALUES (${values})`;
+
+            await Database.execute(sql);
+        }
+
+    }
+    /* eslint-enable */
 
     static async queryDatabase(): Promise<void> {
         const [rows] = await (await Database.connection).execute('SELECT 1 as connected');

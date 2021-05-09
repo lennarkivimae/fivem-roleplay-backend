@@ -1,13 +1,13 @@
-import Database from "../../database/database";
-import Helpers from "../../helpers/helpers";
+import Database from "../../../database/database";
+import Helpers from "../../../helpers/helpers";
 
-export default class DoesPlayerExist {
+export default class PlayerExists {
     constructor() {
         this.init();
     }
 
     init(): void {
-        onNet('serverDoesPlayerExist', (data: string[]) => {
+        onNet('/server/check/player/exist', (data: string[]) => {
             const source: number = Number(data[0]);
             const playerName: string = data[1];
 
@@ -23,6 +23,6 @@ export default class DoesPlayerExist {
             response = 'true';
         }
 
-        emitNet('clientDoesPlayerExist', source, response);
+        emitNet('/client/check/player/exist', source, response);
     }
 }

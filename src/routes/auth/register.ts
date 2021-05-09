@@ -1,7 +1,7 @@
-import Database from "../../../database/database";
-import Helpers from "../../../helpers/helpers";
+import Database from "../../database/database";
+import Helpers from "../../helpers/helpers";
 import md5 from 'md5';
-import Globals from "../../../globals/globals";
+import Globals from "../../globals/globals";
 
 export default class Register {
     constructor() {
@@ -9,7 +9,7 @@ export default class Register {
     }
 
     init(): void {
-        onNet('registerUser', (args: string[]) => {
+        onNet('/server/auth/register', (args: string[]) => {
             const source: number = Number(args[0]);
             const playerName: string = Database.escape(args[1]);
             const password: string = Database.escape(args[2]);
@@ -27,7 +27,7 @@ export default class Register {
         }
 
         if (password && password.length < 8) {
-            Helpers.sendClientMessage(source, ['error', 'Password needs to be atleast 8 characters long']);
+            Helpers.sendClientMessage(source, ['error', 'Password needs to be at least 8 characters long']);
             return;
         }
 
@@ -48,7 +48,7 @@ export default class Register {
         if (doesUserExist) {
             Helpers.sendClientMessage(source, ['success', 'Welcome! You have successfully registered']);
 
-            emitNet('clientRegisterHandler', source, 'true');
+            emitNet('/client/auth/register', source, 'true');
             return;
         }
 

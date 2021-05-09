@@ -18,7 +18,7 @@ export default class Kick {
     }
 
     init(): void {
-        onNet('serverKickPlayer', (data: IData) => {
+        onNet('/server/admin/kick', (data: IData) => {
             this.data = data;
             this.kickPlayer();
         });
@@ -34,8 +34,8 @@ export default class Kick {
             return;
         }
 
-        Helpers.sendClientMessage(this.data.initiatorId, ['error', 'Insufficient priviledges']);
-        Helpers.logEvent(`WARNING: ${this.data.initiatorName} tried to use kick with insufficient priviledges`, this.data.initiatorName, role);
+        Helpers.sendClientMessage(this.data.initiatorId, ['error', 'Insufficient privileges']);
+        Helpers.logEvent(`WARNING: ${this.data.initiatorName} tried to use kick with insufficient privileges`, this.data.initiatorName, role);
     }
 
     escapeData(): void {

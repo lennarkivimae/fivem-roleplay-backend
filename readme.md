@@ -17,6 +17,7 @@ This is build on typescript, using mysql / mariadb as it's database. Using webpa
     npm ci
  ```
  * Create an .env file, example is provided
+Place .env in root of server config files
  * Open server.config.js and change path for env directory. This is a quirk as process.cwd is pointing to different directory than where script is located at.
  * Change fxmanifest.lua and point 'server_script' to correct path relative to where fxmanifest is located at. Which should be root folder of your gamemode. example:
 ```

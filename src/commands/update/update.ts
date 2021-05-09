@@ -16,6 +16,7 @@ export default class Update {
                 const role: string = args[2];
 
                 this.setRole(username, role);
+                return;
             }
 
             if (command === 'bank') {
@@ -23,6 +24,7 @@ export default class Update {
                 const amount: number = Number(args[2]);
 
                 this.setBalance(username, amount);
+                return;
             }
         }, true);
     }

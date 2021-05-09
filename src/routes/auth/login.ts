@@ -1,6 +1,6 @@
 import md5 from 'md5';
-import Database from '../../../database/database';
-import Helpers from '../../../helpers/helpers';
+import Database from '../../database/database';
+import Helpers from '../../helpers/helpers';
 
 interface ICount {
     count: number;
@@ -23,7 +23,7 @@ export default class Login {
     }
 
     registerEvent(): void {
-        onNet('serverLoginHandler', (args: string[]) => {
+        onNet('/server/auth/login', (args: string[]) => {
             const source: number = Number(args[0]);
             const playerName: string = Database.escape(args[1]);
             const password: string = Database.escape(args[2]);
@@ -67,7 +67,7 @@ export default class Login {
             const token: string = await this.initiateToken(playerName, user.role);
             user.token = token;
 
-            emitNet('clientLoginHandler', source, user);
+            emitNet('/client/auth/login', source, user);
             return;
         }
 
