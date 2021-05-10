@@ -2,8 +2,8 @@
   "users": {
     "rows": [
       {
-        "username": "lenny",
-        "password": "qwerty",
+        "username": "admin",
+        "password": "17bc9f41ec37fb54ff0b523bc291aa52",
         "cash": 1000,
         "bank": 1000,
         "role": "admin"

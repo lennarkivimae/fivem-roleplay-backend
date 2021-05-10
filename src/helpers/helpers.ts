@@ -17,7 +17,7 @@ export default class Helpers {
         const messageLevel: string = payload[0];
         const message: string = payload[1];
 
-        emitNet('receiveServerMessage', source, [messageLevel, message]);
+        emitNet('/client/receive/message', source, [messageLevel, message]);
     }
 
     static async verifySession(token: string): Promise<boolean> {
