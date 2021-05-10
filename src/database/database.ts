@@ -15,7 +15,13 @@ interface IIsConnected {
 }
 
 interface IDbColumns {
-    [key: string]: string | number;
+    [key: string]: string | number | IDbConstraint;
+}
+
+interface IDbConstraint {
+    column?: string;
+    referenceTable: string;
+    referenceId?: string;
 }
 
 export default class Database {
@@ -119,7 +125,7 @@ export default class Database {
 
     static async execute(statement: string): Promise<void> {
         await Database.verifyConnection();
-        (await Database.connection).execute(statement);
+        (await Database.connection).execute(statement).catch( err => console.log(err));
     }
 
     static escape(input: string|number): string {
@@ -168,6 +174,10 @@ export default class Database {
         return 'INT';
     }
 
+    static getForeignIdType(): string {
+        return 'bigint unsigned NOT NULL';
+    }
+
     static getDataType(datatype: string, length?: number): string {
         switch (datatype) {
             case 'id':
@@ -180,23 +190,44 @@ export default class Database {
                 return Database.getCharType(length);
             case 'integer':
                 return Database.getIntType();
+            case 'foreignId':
+                return Database.getForeignIdType();
         }
+    }
+
+    static getContstraint(table: string, columnName: string, constraint: IDbConstraint): string {
+        const constraintColumn: string = constraint.column ?? columnName;
+        return `CONSTRAINT FK_${table}${constraintColumn} FOREIGN KEY (${constraintColumn}) REFERENCES ${constraint.referenceTable}(${(constraint.referenceId ?? 'id')})`;
     }
 
     static async create(table: string, columns: IDbColumns[]): Promise<void> {
         await Database.verifyConnection();
         let queryColumns: string[] = [];
+        let constraints: string[] = [];
 
         for (const column of columns) {
             const columnName: string = String(Object.keys(column)[0]);
-            const dataLength: number = Number(Object.keys(column)[1] ?? 0);
+            const dataLength: number = Number(column.length ?? 0);
             const columnDataType = Database.getDataType(String(column[columnName]), dataLength);
+
 
             queryColumns = [
                 ...queryColumns,
                 `${columnName} ${columnDataType}`
             ];
+
+            if (typeof column.constraint !== 'undefined') {
+                constraints = [
+                    ...constraints,
+                    `${Database.getContstraint(table, columnName, column.constraint as IDbConstraint)}`
+                ];
+            }
         }
+
+        queryColumns = [
+            ...queryColumns,
+            ...constraints
+        ]
 
         const query: string = `(${queryColumns.join(',')})`;
         await Database.execute(`CREATE TABLE ${table} ${query}`);
@@ -204,6 +235,8 @@ export default class Database {
 
     static async drop(table: string): Promise<void> {
         await Database.verifyConnection();
+        await Database.execute(`SET FOREIGN_KEY_CHECKS = 0`);
         await Database.execute(`DROP TABLE IF EXISTS ${table}`);
+        await Database.execute(`SET FOREIGN_KEY_CHECKS = 1`);
     }
 }

@@ -1,6 +1,7 @@
 import Logs from '../../database/migrations/logs';
 import Sessions from '../../database/migrations/sessions';
 import Users from '../../database/migrations/users';
+import Balance from '../../database/migrations/balance';
 import * as seeds from './dataseeder.config.json';
 import Database from '../../database/database';
 
@@ -17,7 +18,8 @@ export default class Migrate {
         this.tables = {
             Logs,
             Sessions,
-            Users
+            Users,
+            Balance
         };
 
         this.init();
@@ -54,11 +56,15 @@ export default class Migrate {
 
     async freshMigrate(): Promise<void> {
         for (const table of Object.keys(this.tables)) {
-            console.log(`[Migrate] Dropping table: ${table}`);
-            await this.tables[table].down();
+            try {
+                console.log(`[Migrate] Dropping table: ${table}`);
+                await this.tables[table].down();
 
-            console.log(`[Migrate] Creating table: ${table}`);
-            await this.tables[table].up();
+                console.log(`[Migrate] Creating table: ${table}`);
+                await this.tables[table].up();
+            } catch (e) {
+                console.log(e);
+            }
         }
     }
 }

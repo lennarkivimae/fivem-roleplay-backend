@@ -13,12 +13,6 @@ export default class Users {
                 password: 'text'
             },
             {
-                cash: 'integer'
-            },
-            {
-                bank: 'integer'
-            },
-            {
                 role: 'string'
             }
         ]);
