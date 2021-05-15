@@ -29,6 +29,16 @@ export default class Migrate {
         RegisterCommand('migrate', async (source: number, args: string[]): Promise<void> => {
             const table: string = args[0];
 
+            const results = await Database.select('users')
+                .where({
+                    id: 2,
+                }).where({
+                    id: 1
+                }).get();
+
+            console.log(results);
+
+
             if (table === 'fresh') {
                 await this.freshMigrate();
 

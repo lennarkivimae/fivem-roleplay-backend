@@ -15,7 +15,7 @@ interface IIsConnected {
 }
 
 interface IDbColumns {
-    [key: string]: string | number | IDbConstraint;
+    [key: string]: string | number | IDbConstraint | boolean;
 }
 
 interface IDbConstraint {
@@ -25,10 +25,21 @@ interface IDbConstraint {
 }
 
 export default class Database {
-    static connection: Promise<mysql.Connection> = Database.createConnection();
+    static connection: Promise<mysql.Pool> = Database.createConnection();
     static hasLiveConnection: boolean = false;
 
-    static async createConnection(): Promise<mysql.Connection> {
+    //builder
+    private sqlQuery: string = '';
+    private whereStatement = '';
+    private selectStatement = '';
+    //eslint-disable-next-line
+    private whereData: any = [];
+
+    constructor(selectData: string) {
+        this.selectStatement = selectData;
+    }
+
+    static async createConnection(): Promise<mysql.Pool> {
         dotenv.config({ path: process.cwd() + `/.env` });
 
         const connectionSettings: IDbSettings = {
@@ -36,10 +47,10 @@ export default class Database {
             user: process.env.DB_USER,
             password: process.env.DB_PASSWORD,
             port: Number(process.env.DB_PORT),
-            database: process.env.DB
+            database: process.env.DB,
         }
 
-        const connection: mysql.Connection | void = await mysql.createConnection(connectionSettings);
+        const connection: mysql.Pool | void = await mysql.createPool({...connectionSettings, waitForConnections: true, connectionLimit: 10, queueLimit: 0});
 
         const [rows] = await connection.execute('SELECT 1 as connected');
 
@@ -123,12 +134,49 @@ export default class Database {
     }
     /* eslint-enable */
 
+    where(columns: IDbColumns, condition = 'AND', compareIndicator: string = '='): Database {
+        const columnNames: string[] = Object.keys(columns);
+        const statementArrayString: string[] = [];
+        this.whereData = this.whereData.concat(Object.values(columns));
+
+        for (const columnName of columnNames) {
+            statementArrayString.push(columnName  + compareIndicator + '?');
+        }
+
+        const whereStatementAsString: string = statementArrayString.join(' ' + condition + ' ');
+
+        if (this.whereStatement.length === 0) {
+            this.whereStatement = ' WHERE ' + `(${whereStatementAsString})`;
+        } else {
+            this.whereStatement +=  ' OR ' + `(${whereStatementAsString})`;
+        }
+
+        return this;
+    }
+
+    static select(table: string): Database {
+        return  new Database('SELECT * FROM '+ table +'');
+    }
+
+    async get(all: boolean = true): Promise<mysql.RowDataPacket[] | mysql.RowDataPacket[][] | mysql.OkPacket | mysql.OkPacket[] | mysql.ResultSetHeader> {
+        this.sqlQuery = this.selectStatement + this.whereStatement;
+        // eslint-disable-next-line
+        const sqlParams: any = [...this.whereData];
+
+        await Database.verifyConnection();
+        // eslint-disable-next-line
+        // @ts-ignore
+        const [rows] = await (await Database.connection).execute(this.sqlQuery, sqlParams);
+
+        return all ? rows : rows[0];
+    }
+
     static async execute(statement: string): Promise<void> {
         await Database.verifyConnection();
         (await Database.connection).execute(statement).catch( err => console.log(err));
     }
 
-    static escape(input: string|number): string {
+    static escape(input: string | number | boolean | IDbConstraint): string {
         return mysql.escape(input);
     }
 

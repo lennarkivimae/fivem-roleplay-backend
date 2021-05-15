@@ -48,7 +48,6 @@ export default class Login {
 
     async checkPassword(playerName: string, password: string): Promise<boolean> {
         const sql: string = `SELECT COUNT(*) as count FROM users WHERE username=${playerName} AND password='${password}'`;
-
         const results: ICount = await Database.query(sql);
 
         if (results.count === 1) {
@@ -71,7 +70,7 @@ export default class Login {
             return;
         }
 
-        Helpers.sendClientMessage(source, ['error', 'Wrong password']);
+        emitNet('/client/auth/login/error', source, 'wrong-password');
     }
 
     async initiateToken(playerName: string, role: string): Promise<string> {
@@ -84,7 +83,7 @@ export default class Login {
             await Database.execute(sql);
         }
 
-        Database.execute(`INSERT INTO sessions (session_id, username, role)VALUES ('${token}', ${playerName}, '${role}')`);
+        Database.execute(`INSERT INTO sessions (session_id, username, role) VALUES ('${token}', ${playerName}, '${role}')`);
 
         return token;
     }
