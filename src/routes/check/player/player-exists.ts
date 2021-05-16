@@ -1,5 +1,6 @@
 import Database from "../../../database/database";
 import Helpers from "../../../helpers/helpers";
+import {RowDataPacket} from 'mysql2';
 
 export default class PlayerExists {
     constructor() {
@@ -11,7 +12,7 @@ export default class PlayerExists {
             const source: number = Number(data[0]);
             const playerName: string = data[1];
 
-            this.checkUser(source, Database.escape(playerName));
+            this.checkUser(source, playerName);
         });
     }
 

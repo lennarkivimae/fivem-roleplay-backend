@@ -1,4 +1,5 @@
 import Database from "../database/database";
+import {RowDataPacket} from 'mysql2';
 
 interface ICount {
     count: number;
@@ -64,10 +65,11 @@ export default class Helpers {
     }
 
     static async checkUser(playerName: string): Promise<boolean> {
-        const sql: string = `SELECT COUNT(*) as count FROM users WHERE username=${playerName}`;
-        const results: ICount = await Database.query(sql);
+        const foundUser = await Database.select('users').where({
+                username: playerName.toLowerCase(),
+            }).get() as RowDataPacket[];
 
-        if (results.count > 0) {
+        if (typeof foundUser[0] !== 'undefined') {
             return true;
         }
 

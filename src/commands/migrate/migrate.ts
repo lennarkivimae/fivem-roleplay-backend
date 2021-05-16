@@ -29,16 +29,6 @@ export default class Migrate {
         RegisterCommand('migrate', async (source: number, args: string[]): Promise<void> => {
             const table: string = args[0];
 
-            const results = await Database.select('users')
-                .where({
-                    id: 2,
-                }).where({
-                    id: 1
-                }).get();
-
-            console.log(results);
-
-
             if (table === 'fresh') {
                 await this.freshMigrate();
 
@@ -59,17 +49,27 @@ export default class Migrate {
         for (const table of tables) {
             if (table !== 'default') {
                 console.log(`[Seed] Seeding: ${table}`);
-                await Database.insert(table, seeds[table].rows);
+                // await Database.insert(table, seeds[table].rows);
+                for (const row of seeds[table].rows) {
+                    await Database.select(table).insert(row);
+                }
             }
         }
     }
 
     async freshMigrate(): Promise<void> {
+        await Database.execute(`SET FOREIGN_KEY_CHECKS = 0`);
         for (const table of Object.keys(this.tables)) {
             try {
                 console.log(`[Migrate] Dropping table: ${table}`);
                 await this.tables[table].down();
-
+            } catch (e) {
+                console.log(e);
+            }
+        }
+        await Database.execute(`SET FOREIGN_KEY_CHECKS = 1`);
+        for (const table of Object.keys(this.tables)) {
+            try {
                 console.log(`[Migrate] Creating table: ${table}`);
                 await this.tables[table].up();
             } catch (e) {

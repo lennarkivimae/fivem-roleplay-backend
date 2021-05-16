@@ -32,11 +32,13 @@ export default class Database {
     private sqlQuery: string = '';
     private whereStatement = '';
     private selectStatement = '';
+    private deleteStatement = '';
+    private table = '';
     //eslint-disable-next-line
     private whereData: any = [];
 
-    constructor(selectData: string) {
-        this.selectStatement = selectData;
+    constructor(table: string) {
+        this.table = table;
     }
 
     static async createConnection(): Promise<mysql.Pool> {
@@ -76,29 +78,6 @@ export default class Database {
         Database.connection = Database.createConnection();
     }
 
-    /* eslint-disable */
-    static async insert(table: string, rows: any[]): Promise<void> {
-        for (const row of rows) {
-            const columns: string = Object.keys(row).join(', ');
-            let valuesArray: any[] = [];
-
-            for (const value of Object.values(row)) {
-                if (typeof value === 'string') {
-                    valuesArray.push('\'' + value + '\'');
-                } else {
-                    valuesArray.push(value);
-                }
-            }
-
-            const values = valuesArray.join(', ');
-            const sql: string = `INSERT INTO ${table} (${columns}) VALUES (${values})`;
-
-            await Database.execute(sql);
-        }
-
-    }
-    /* eslint-enable */
-
     static async queryDatabase(): Promise<void> {
         const [rows] = await (await Database.connection).execute('SELECT 1 as connected');
         const response = rows[0].connected;
@@ -134,6 +113,10 @@ export default class Database {
     }
     /* eslint-enable */
 
+    static select(table: string): Database {
+        return new Database(table);
+    }
+
     where(columns: IDbColumns, condition = 'AND', compareIndicator: string = '='): Database {
         const columnNames: string[] = Object.keys(columns);
         const statementArrayString: string[] = [];
@@ -154,21 +137,46 @@ export default class Database {
         return this;
     }
 
-    static select(table: string): Database {
-        return  new Database('SELECT * FROM '+ table +'');
+    async get(all: boolean = true): Promise<mysql.RowDataPacket[] | mysql.RowDataPacket[][] | mysql.OkPacket | mysql.OkPacket[] | mysql.ResultSetHeader> {
+        await Database.verifyConnection();
+        this.sqlQuery = 'SELECT * FROM '+ this.table +'' + this.whereStatement;
+        const sqlParams: string[] = [...this.whereData];
+
+        const [rows] = await (await Database.connection).execute(this.sqlQuery, sqlParams);
+        const receivedRows = rows;
+        const row = [rows[0]];
+
+        return all ? receivedRows : row;
     }
 
-    async get(all: boolean = true): Promise<mysql.RowDataPacket[] | mysql.RowDataPacket[][] | mysql.OkPacket | mysql.OkPacket[] | mysql.ResultSetHeader> {
-        this.sqlQuery = this.selectStatement + this.whereStatement;
-        // eslint-disable-next-line
-        const sqlParams: any = [...this.whereData];
-
+    async delete(): Promise<void> {
         await Database.verifyConnection();
-        // eslint-disable-next-line
-        // @ts-ignore
-        const [rows] = await (await Database.connection).execute(this.sqlQuery, sqlParams);
+        this.sqlQuery = 'DELETE FROM '+ this.table +'' + this.whereStatement;
+        const sqlParams: string[] = [...this.whereData];
+        await (await Database.connection).execute(this.sqlQuery, sqlParams);
+    }
 
-        return all ? rows : rows[0];
+    async insert(columns: IDbColumns): Promise<void|number> {
+        await Database.verifyConnection();
+        this.sqlQuery = 'INSERT INTO '+ this.table +'';
+        const columnNames: string[] = Object.keys(columns);
+        const columnValues: (string | number | IDbConstraint | boolean)[] = Object.values(columns);
+        const placeholderAsValues: string[] = [];
+
+        this.sqlQuery += ` (${columnNames.join(',')}) VALUES `;
+
+        columnValues.forEach(() => {
+            placeholderAsValues.push('?');
+        });
+
+        this.sqlQuery += `(${placeholderAsValues.join(',')})`;
+
+        const [response] = await (await Database.connection).execute(this.sqlQuery, columnValues);
+        const responseObject: mysql.OkPacket = response as mysql.OkPacket;
+
+        if (typeof responseObject !== 'undefined' && typeof responseObject.insertId !== 'undefined') {
+            return responseObject.insertId;
+        }
     }
 
     static async execute(statement: string): Promise<void> {
@@ -178,28 +186,6 @@ export default class Database {
 
     static escape(input: string | number | boolean | IDbConstraint): string {
         return mysql.escape(input);
-    }
-
-    static stringifyArray(array: string[], seperator: string = ','): string {
-        let stringifiedArray = '';
-
-        if (array && array.length > 0) {
-            let index: number = 0;
-
-            for (const string of array) {
-                if (index == 0) {
-                    stringifiedArray += `${string}`;
-                    index += 1;
-
-                    continue;
-                }
-                stringifiedArray += `${seperator}${string}`;
-
-                index += 1;
-            }
-        }
-
-        return stringifiedArray;
     }
 
     static getPrimaryKey(): string {
@@ -282,9 +268,6 @@ export default class Database {
     }
 
     static async drop(table: string): Promise<void> {
-        await Database.verifyConnection();
-        await Database.execute(`SET FOREIGN_KEY_CHECKS = 0`);
         await Database.execute(`DROP TABLE IF EXISTS ${table}`);
-        await Database.execute(`SET FOREIGN_KEY_CHECKS = 1`);
     }
 }

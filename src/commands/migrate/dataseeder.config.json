@@ -3,8 +3,17 @@
     "rows": [
       {
         "username": "lenny",
-        "password": "17bc9f41ec37fb54ff0b523bc291aa52",
+        "password": "12478e7ad0e39aa9c35be4b9a694ba9b",
         "role": "admin"
+      }
+    ]
+  },
+  "balance": {
+    "rows": [
+      {
+        "player_id": 1,
+        "bank": 9999,
+        "cash": 3333
       }
     ]
   }

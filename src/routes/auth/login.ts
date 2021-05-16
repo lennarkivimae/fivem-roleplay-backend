@@ -2,10 +2,6 @@ import md5 from 'md5';
 import Database from '../../database/database';
 import Helpers from '../../helpers/helpers';
 
-interface ICount {
-    count: number;
-}
-
 interface IUserData {
     token: string,
     role: string,
@@ -25,8 +21,8 @@ export default class Login {
     registerEvent(): void {
         onNet('/server/auth/login', (args: string[]) => {
             const source: number = Number(args[0]);
-            const playerName: string = Database.escape(args[1]);
-            const password: string = Database.escape(args[2]);
+            const playerName: string = args[1].toLowerCase();
+            const password: string = args[2];
 
             this.loginHandler(source, playerName, password);
         });
@@ -47,10 +43,12 @@ export default class Login {
     }
 
     async checkPassword(playerName: string, password: string): Promise<boolean> {
-        const sql: string = `SELECT COUNT(*) as count FROM users WHERE username=${playerName} AND password='${password}'`;
-        const results: ICount = await Database.query(sql);
+        const foundUser = await Database.select('users').where({
+            username: playerName,
+            password: password
+        }).get(false);
 
-        if (results.count === 1) {
+        if (typeof foundUser[0] !== 'undefined' && typeof foundUser[0].username === 'string') {
             return true;
         }
 
@@ -58,15 +56,28 @@ export default class Login {
     }
 
     async logUserIn(source: number, playerName: string, password: string): Promise<void> {
-        const sql: string = `SELECT role, cash, bank FROM users WHERE username=${playerName} AND password='${password}'`;
-        const doesPasswordMatch: boolean = await this.checkPassword(playerName, password);
+        const user = await Database.select('users')
+            .where({
+                username: playerName,
+                password: password
+            }).get(false);
 
-        if (doesPasswordMatch) {
-            const user: IUserData  = await Database.query(sql);
-            const token: string = await this.initiateToken(playerName, user.role);
-            user.token = token;
+        if (typeof user[0] !== 'undefined' && typeof user[0].password === 'string') {
+            const balance = await Database.select('balance')
+                .where({
+                    player_id: user[0].id
+                }).get(false);
 
-            emitNet('/client/auth/login', source, user);
+            const token: string = await this.initiateToken(playerName, user[0].role);
+
+            const userData: IUserData = {
+                role: user[0].role,
+                bank: balance[0].bank,
+                cash: balance[0].cash,
+                token: token
+            };
+
+            emitNet('/client/auth/login', source, userData);
             return;
         }
 
@@ -74,16 +85,24 @@ export default class Login {
     }
 
     async initiateToken(playerName: string, role: string): Promise<string> {
-        const sql: string = `SELECT COUNT(*) as count FROM sessions WHERE username=${playerName}`;
-        const results: ICount = await Database.query(sql);
+        const existingSession = await Database.select('sessions')
+            .where({
+                username: playerName
+            }).get(false);
+
         const token: string = this.generateToken(36);
 
-        if (results.count > 0) {
-            const sql: string = `DELETE FROM sessions WHERE username=${playerName}`;
-            await Database.execute(sql);
+        if (typeof existingSession[0] !== 'undefined') {
+            await Database.select('sessions').where({
+                username: playerName
+            }).delete();
         }
 
-        Database.execute(`INSERT INTO sessions (session_id, username, role) VALUES ('${token}', ${playerName}, '${role}')`);
+        Database.select('sessions').insert({
+            session_id: token,
+            username: playerName,
+            role: role
+        });
 
         return token;
     }
